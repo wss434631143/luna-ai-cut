@@ -1,0 +1,256 @@
+:root {
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei",
+    sans-serif;
+  color: #1d2329;
+  background: #f4f2ee;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button,
+input {
+  letter-spacing: 0;
+}
+
+.route-panel[hidden] {
+  display: none;
+}
+
+.route-stack {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.route-panel {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+}
+
+/* ====== 帮助与反馈弹窗 ====== */
+.help-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+}
+
+.help-section {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.help-section + .help-section {
+  border-top: 1px solid var(--hairline);
+}
+
+.help-version-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.help-version-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.help-update-available {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.help-no-update {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.help-link-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--blue, #0066cc);
+  background: transparent;
+  color: var(--blue, #0066cc);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+  text-decoration: none;
+}
+
+.help-link-btn:hover {
+  background: var(--blue, #0066cc);
+  color: #fff;
+  text-decoration: none;
+}
+
+.help-link-btn small {
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+.help-links-row {
+  flex-direction: row;
+  justify-content: center;
+  gap: 10px;
+}
+
+.help-qr-code {
+  width: 160px;
+  height: 160px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.help-qr-tip {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.help-devtools-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--hairline);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+}
+
+.help-devtools-btn:hover {
+  background: var(--parchment);
+  color: var(--ink);
+}
+
+/* ====== 更新说明弹窗 ====== */
+.release-notes-dialog-content.ui-dialog-content {
+  width: min(720px, 92vw);
+}
+
+.release-notes-body {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 0 4px;
+}
+
+.release-notes-body .ui-accordion-header {
+  padding: 10px 0;
+}
+
+.release-notes-body .ui-accordion-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.release-notes-body .ui-accordion-body {
+  padding-bottom: 16px;
+}
+
+.release-notes-body .markdown-viewer h2 {
+  font-size: 14px;
+  margin-top: 0;
+}
+
+.release-notes-empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 32px 0;
+  font-size: 14px;
+}
+
+/* ====== 更新提示横幅 ====== */
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 8px 18px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+
+.update-banner-text {
+  font-weight: 400;
+}
+
+.update-banner-text strong {
+  font-weight: 600;
+}
+
+.update-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.update-banner-close {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 12px;
+  border: none;
+  cursor: pointer;
+  transition: background 120ms;
+}
+
+/* 蓝色横幅上的按钮使用白色系样式，避免与背景融为一体 */
+.update-banner-actions .ui-btn-secondary,
+.update-banner-actions .ui-btn-primary {
+  border-color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.update-banner-actions .ui-btn-secondary:hover,
+.update-banner-actions .ui-btn-primary:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.update-banner-close:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
