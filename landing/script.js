@@ -7,8 +7,9 @@
 // ★ 由 deploy-release.sh 自动更新 ★
 const LATEST_RELEASE = {
   tag: 'v1.2.14',
-  gitcode_mac: 'https://gitcode.com/diamondfsd/luna-ai-cut-package-release/releases/download/v1.2.14/LunaAICut-Mac-1.2.14-Installer.dmg',
-  gitcode_win: 'https://gitcode.com/diamondfsd/luna-ai-cut-package-release/releases/download/v1.2.14/LunaAICut-Windows-1.2.14-Setup.exe',
+  mac_x64: 'https://github.com/wss434631143/luna-ai-cut/releases/download/v1.2.14/LunaAICut-Mac-1.2.14-x64-Installer.dmg',
+  mac_arm64: 'https://github.com/wss434631143/luna-ai-cut/releases',
+  win_x64: 'https://github.com/wss434631143/luna-ai-cut/releases',
 }
 
 // ── 版本号渲染 ──────────────────────────────────────────
@@ -29,9 +30,11 @@ function isSetupExe(name) {
 }
 
 // ── DOM 引用 ──────────────────────────────────────────
-const macCard = document.getElementById('dl-mac')
+const macX64Card = document.getElementById('dl-mac-x64')
+const macArm64Card = document.getElementById('dl-mac-arm64')
 const winCard = document.getElementById('dl-win')
-const macRegion = document.getElementById('dl-mac-region')
+const macX64Region = document.getElementById('dl-mac-x64-region')
+const macArm64Region = document.getElementById('dl-mac-arm64-region')
 const winRegion = document.getElementById('dl-win-region')
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -63,36 +66,41 @@ function setDownloadLinks() {
   const isMac = /macintosh|mac os x/.test(ua)
 
   // 高亮当前平台
-  if (isMac && macCard) {
-    macCard.style.borderColor = '#2997ff'
-    macCard.style.background = 'rgba(41, 151, 255, 0.08)'
+  if (isMac && macX64Card) {
+    macX64Card.style.borderColor = '#2997ff'
+    macX64Card.style.background = 'rgba(41, 151, 255, 0.08)'
   } else if (!isMac && winCard) {
     winCard.style.borderColor = '#2997ff'
     winCard.style.background = 'rgba(41, 151, 255, 0.08)'
   }
 
-  // 优先使用 embed 的地址，否则 fallback 到 GitCode 仓库页
-  const macUrl =
-    LATEST_RELEASE.gitcode_mac ||
-    'https://gitcode.com/diamondfsd/luna-ai-cut-package-release/releases'
-  const winUrl =
-    LATEST_RELEASE.gitcode_win ||
-    'https://gitcode.com/diamondfsd/luna-ai-cut-package-release/releases'
+  // 优先使用 embed 的地址，否则 fallback 到 GitHub Release 页
+  const releaseUrl = 'https://github.com/wss434631143/luna-ai-cut/releases'
+  const macX64Url = LATEST_RELEASE.mac_x64 || releaseUrl
+  const macArm64Url = LATEST_RELEASE.mac_arm64 || releaseUrl
+  const winUrl = LATEST_RELEASE.win_x64 || releaseUrl
 
   // 地区标记文字
-  const regionLabel = isChineseUser ? '🇨🇳 国内加速' : '🌐 GitHub'
+  const regionLabel = 'GitHub Release'
+  const buildLabel = '源码打包'
 
-  if (macCard) {
-    macCard.href = macUrl
+  if (macX64Card) {
+    macX64Card.href = macX64Url
+  }
+  if (macArm64Card) {
+    macArm64Card.href = macArm64Url
   }
   if (winCard) {
     winCard.href = winUrl
   }
-  if (macRegion) {
-    macRegion.textContent = regionLabel
+  if (macX64Region) {
+    macX64Region.textContent = regionLabel
+  }
+  if (macArm64Region) {
+    macArm64Region.textContent = buildLabel
   }
   if (winRegion) {
-    winRegion.textContent = regionLabel
+    winRegion.textContent = buildLabel
   }
 
   // ── API Fallback ──
@@ -101,22 +109,27 @@ function setDownloadLinks() {
 
 // ── GitHub API: 获取最新 Release ──────────────────────
 function fetchGitHubRelease() {
-  fetch('https://api.github.com/repos/diamondfsd/luna-ai-cut/releases/latest')
+  fetch('https://api.github.com/repos/wss434631143/luna-ai-cut/releases/latest')
     .then((res) => {
       if (!res.ok) throw new Error('Failed to fetch release')
       return res.json()
     })
     .then((data) => {
       const assets = data.assets || []
-      const macAsset = assets.find((a) => isDmg(a.name))
+      const macX64Asset = assets.find((a) => /x64.*Installer\.dmg$/i.test(a.name) || isDmg(a.name))
+      const macArm64Asset = assets.find((a) => /arm64.*Installer\.dmg$/i.test(a.name))
       const winAsset = assets.find((a) => isSetupExe(a.name))
 
       // 国际用户走 GitHub 直链
       if (!isChineseUser) {
-        if (macAsset && macCard) macCard.href = macAsset.browser_download_url
+        if (macX64Asset && macX64Card) macX64Card.href = macX64Asset.browser_download_url
+        if (macArm64Asset && macArm64Card) {
+          macArm64Card.href = macArm64Asset.browser_download_url
+          if (macArm64Region) macArm64Region.textContent = 'GitHub Release'
+        }
         if (winAsset && winCard) winCard.href = winAsset.browser_download_url
-        if (macRegion) macRegion.textContent = '🌐 国际下载'
-        if (winRegion) winRegion.textContent = '🌐 国际下载'
+        if (macX64Region) macX64Region.textContent = 'GitHub Release'
+        if (winAsset && winRegion) winRegion.textContent = 'GitHub Release'
       }
     })
     .catch(() => {})

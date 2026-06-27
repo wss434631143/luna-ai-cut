@@ -11,7 +11,7 @@
     <meta property="og:title" content="Luna AI Cut — 智能媒体管理工具" />
     <meta property="og:description" content="面向 Insta360 Luna Ultra 的专业桌面媒体管理工具" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://diamondfsd.github.io/luna-ai-cut/" />
+    <meta property="og:url" content="https://wss434631143.github.io/luna-ai-cut/" />
 
     <link rel="icon" type="image/png" href="assets/favicon.png" />
     <link rel="stylesheet" href="style.css" />
@@ -29,7 +29,7 @@
           <a href="#features">功能</a>
           <a href="#guide">使用指南</a>
           <a href="install_readme.html">安装指南</a>
-          <a href="https://github.com/diamondfsd/luna-ai-cut" target="_blank" rel="noopener" class="nav-github">
+          <a href="https://github.com/wss434631143/luna-ai-cut" target="_blank" rel="noopener" class="nav-github">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.335-1.755-1.335-1.755-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12 24 5.37 18.63 0 12 0z"/>
             </svg>
@@ -95,23 +95,36 @@
       <div class="section-inner">
         <div class="section-label accent">下载</div>
         <h2 class="section-title section-title-light">选择你的平台 <span class="version-tag" id="current-version"></span></h2>
-        <p class="section-desc section-desc-light">目前支持 macOS 和 Windows，免费使用</p>
+        <p class="section-desc section-desc-light">覆盖 macOS Intel、macOS Apple Silicon 和 Windows x64，免费使用</p>
 
         <div class="download-grid">
-          <a href="https://gitcode.com/diamondfsd/luna-ai-cut-package-release/releases" class="download-card" id="dl-mac" target="_blank" rel="noopener">
+          <a href="https://github.com/wss434631143/luna-ai-cut/releases/download/v1.2.14/LunaAICut-Mac-1.2.14-x64-Installer.dmg" class="download-card" id="dl-mac-x64" target="_blank" rel="noopener">
             <div class="download-icon">
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"/>
                 <path d="M9 21h6"/>
               </svg>
             </div>
-            <h3 class="download-title">macOS 版</h3>
-            <p class="download-sub">Apple Silicon (M 系列芯片)</p>
+            <h3 class="download-title">macOS Intel</h3>
+            <p class="download-sub">适用于 Intel 芯片 Mac</p>
             <span class="download-badge">.dmg · 免费</span>
-            <span class="dl-region-tag" id="dl-mac-region"></span>
+            <span class="dl-region-tag" id="dl-mac-x64-region"></span>
           </a>
 
-          <a href="https://gitcode.com/diamondfsd/luna-ai-cut-package-release/releases" class="download-card" id="dl-win" target="_blank" rel="noopener">
+          <a href="https://github.com/wss434631143/luna-ai-cut/releases" class="download-card" id="dl-mac-arm64" target="_blank" rel="noopener">
+            <div class="download-icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3c3 0 5.5 2.46 5.5 5.5 0 4.27-3.31 8.23-5.5 11.5-2.19-3.27-5.5-7.23-5.5-11.5C6.5 5.46 9 3 12 3z"/>
+                <path d="M10 8h4"/><path d="M12 6v4"/>
+              </svg>
+            </div>
+            <h3 class="download-title">macOS Apple Silicon</h3>
+            <p class="download-sub">适用于 M 系列芯片 Mac</p>
+            <span class="download-badge">.dmg · 可自行打包</span>
+            <span class="dl-region-tag" id="dl-mac-arm64-region"></span>
+          </a>
+
+          <a href="https://github.com/wss434631143/luna-ai-cut/releases" class="download-card" id="dl-win" target="_blank" rel="noopener">
             <div class="download-icon">
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="4" y="4" width="16" height="16" rx="2"/>
@@ -127,8 +140,8 @@
           </a>
         </div>
         <p class="download-note" id="dl-note">
-          根据你的地区自动选择最快下载源 ·
-          <a href="https://github.com/diamondfsd/luna-ai-cut/releases" target="_blank" rel="noopener">GitHub Releases</a>
+          当前已发布 macOS Intel x64 安装包，其他环境可通过项目打包命令生成 ·
+          <a href="https://github.com/wss434631143/luna-ai-cut/releases" target="_blank" rel="noopener">GitHub Releases</a>
         </p>
         <p style="text-align:center;margin-top:16px;">
           <a class="pill secondary" href="install_readme.html" style="font-size:14px;min-height:36px;padding:6px 18px;">
@@ -275,9 +288,9 @@
           Luna AI Cut
         </div>
         <div class="footer-links">
-          <a href="https://github.com/diamondfsd/luna-ai-cut" target="_blank" rel="noopener">GitHub</a>
-          <a href="https://github.com/diamondfsd/luna-ai-cut/issues" target="_blank" rel="noopener">问题反馈</a>
-          <a href="https://github.com/diamondfsd/luna-ai-cut/releases" target="_blank" rel="noopener">更新日志</a>
+          <a href="https://github.com/wss434631143/luna-ai-cut" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://github.com/wss434631143/luna-ai-cut/issues" target="_blank" rel="noopener">问题反馈</a>
+          <a href="https://github.com/wss434631143/luna-ai-cut/releases" target="_blank" rel="noopener">更新日志</a>
         </div>
         <p class="footer-copy">
           开源项目 · 基于 MIT 协议发布。<br/>
