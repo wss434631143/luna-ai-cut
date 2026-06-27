@@ -9,7 +9,7 @@
 
 .device-connect-content {
   display: grid;
-  max-width: 420px;
+  max-width: 460px;
   justify-items: center;
   gap: 12px;
   text-align: center;
@@ -88,6 +88,90 @@
 
 .device-connect-help {
   margin-top: 24px;
+}
+
+.device-usb-panel {
+  width: 100%;
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: var(--canvas);
+  text-align: left;
+}
+
+.device-usb-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.device-usb-heading span,
+.device-usb-heading button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.device-usb-heading span {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.device-usb-heading button {
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  background: var(--parchment);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+}
+
+.device-usb-heading button:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.device-usb-list {
+  display: grid;
+  gap: 8px;
+}
+
+.device-usb-item {
+  display: grid;
+  gap: 2px;
+  border-radius: 10px;
+  background: rgba(0, 102, 204, 0.06);
+  padding: 10px 12px;
+}
+
+.device-usb-item strong {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.device-usb-item span,
+.device-usb-item em,
+.device-usb-empty,
+.device-usb-note {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.device-usb-empty {
+  margin: 0;
+}
+
+.device-usb-note {
+  margin: 10px 0 0;
 }
 
 .device-help-btn {

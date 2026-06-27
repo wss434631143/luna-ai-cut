@@ -247,6 +247,20 @@ export interface BluetoothDeviceCandidate {
   localName?: string
 }
 
+export interface UsbDeviceCandidate {
+  id: string
+  name: string
+  manufacturer?: string
+  serialNumber?: string
+  vendorId?: string
+  productId?: string
+  productVersion?: string
+  busName?: string
+  transport: 'usb'
+  matched: boolean
+  source: 'system_profiler'
+}
+
 export type WifiDebugPlatform = 'darwin' | 'win32' | 'linux' | string
 
 export interface WifiDebugStatus {
@@ -354,6 +368,7 @@ export interface LunaApi {
   openDevTools(): Promise<void>
   scanBluetoothDevices(timeoutMs?: number): Promise<BluetoothDeviceCandidate[]>
   cancelBluetoothScan(): Promise<void>
+  scanUsbDevices(): Promise<UsbDeviceCandidate[]>
   connectDevice(options?: DeviceConnectOptions): Promise<ConnectionStatus>
   checkConnection(host?: string): Promise<ConnectionStatus>
   listFiles(host?: string, storageId?: string): Promise<LunaFile[]>

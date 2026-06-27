@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { CheckCircle2, HelpCircle, MonitorCog, PlugZap, RefreshCw } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Cable, CheckCircle2, HelpCircle, MonitorCog, PlugZap, RefreshCw } from 'lucide-react'
 
-import type { AppSettings, ConnectionStatus, DeviceConnectionPhase, DeviceDefinition } from '../shared/types'
+import type { AppSettings, ConnectionStatus, DeviceConnectionPhase, DeviceDefinition, UsbDeviceCandidate } from '../shared/types'
 import { Alert, Button } from '../ui'
 import { HelpDialog } from '../components/HelpDialog'
 import '../styles/wifi.css'
@@ -23,9 +23,30 @@ export function DeviceConnectPage({
   onConnect,
 }: DeviceConnectPageProps) {
   const [connecting, setConnecting] = useState(false)
+  const [usbScanning, setUsbScanning] = useState(false)
+  const [usbDevices, setUsbDevices] = useState<UsbDeviceCandidate[]>([])
+  const [usbMessage, setUsbMessage] = useState('正在检测数据线连接...')
   const isChecking = phase === 'checking'
   const isError = phase === 'error'
   const deviceName = activeDevice?.name ?? '设备'
+
+  useEffect(() => {
+    void scanUsb()
+  }, [])
+
+  async function scanUsb(): Promise<void> {
+    setUsbScanning(true)
+    try {
+      const devices = await window.luna.scanUsbDevices()
+      setUsbDevices(devices)
+      setUsbMessage(devices.length > 0 ? '已识别到数据线设备' : '暂未识别到数据线设备')
+    } catch (error) {
+      setUsbDevices([])
+      setUsbMessage(error instanceof Error ? error.message : String(error))
+    } finally {
+      setUsbScanning(false)
+    }
+  }
 
   async function handleConnect(): Promise<void> {
     setConnecting(true)
@@ -81,8 +102,41 @@ export function DeviceConnectPage({
             打开 Wi-Fi 设置
           </Button>
         </div>
+
+        <div className="device-usb-panel">
+          <div className="device-usb-heading">
+            <span>
+              <Cable size={15} />
+              数据线连接
+            </span>
+            <button type="button" onClick={() => void scanUsb()} disabled={usbScanning}>
+              <RefreshCw size={13} className={usbScanning ? 'spin' : undefined} />
+              刷新
+            </button>
+          </div>
+          {usbDevices.length > 0 ? (
+            <div className="device-usb-list">
+              {usbDevices.map((device) => (
+                <div className="device-usb-item" key={device.id}>
+                  <strong>{device.name}</strong>
+                  <span>{device.manufacturer || '未知厂商'}{device.busName ? ` · ${device.busName}` : ''}</span>
+                  {(device.vendorId || device.productId || device.serialNumber) && (
+                    <em>
+                      {[device.vendorId, device.productId, device.serialNumber].filter(Boolean).join(' · ')}
+                    </em>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="device-usb-empty">{usbMessage}</p>
+          )}
+          <p className="device-usb-note">
+            先识别 USB 设备；媒体读取还需要后续接入相机的 PTP/MTP 或系统导入协议。
+          </p>
+        </div>
         <p className="device-connect-tip">
-          设备 Wi-Fi 可能无互联网；下载完成后建议切回自己的网络
+          Wi-Fi 连接仍可继续使用；数据线识别用于验证 macOS 能看到相机
         </p>
         <div className="device-connect-help">
           <HelpDialog>

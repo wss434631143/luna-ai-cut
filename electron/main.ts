@@ -39,6 +39,7 @@ import { createPreviewTaskQueue } from './previewTaskQueue'
 import { appIconPath, createMainWindow } from './windowService'
 import { chatCompletion } from './aiService'
 import { openWifiSettings } from './wifiService'
+import { scanUsbDevices } from './usbDeviceService'
 import {
   checkWifiPort,
   connectWifiNetwork,
@@ -243,6 +244,7 @@ function registerIpc(): void {
   ipcMain.handle('bluetooth:cancelScan', () => {
     cancelBluetoothScan()
   })
+  ipcMain.handle('usb:scan', () => scanUsbDevices())
   ipcMain.handle('devtools:open', () => {
     const bw = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0]
     bw?.webContents.openDevTools({ mode: 'detach' })
