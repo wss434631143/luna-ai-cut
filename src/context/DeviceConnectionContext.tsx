@@ -1,12 +1,12 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useApp } from './AppContext'
-import type { AppSettings, ConnectionStatus, DeviceConnectionPhase, DeviceDefinition, MockServerStatus } from '../shared/types'
+import type { AppSettings, ConnectionMode, ConnectionStatus, DeviceConnectionPhase, DeviceDefinition, MockServerStatus } from '../shared/types'
 
 interface DeviceConnectionContextValue {
   activeDevice: DeviceDefinition | undefined
   cameraLibraryMounted: boolean
-  connectDevice: () => Promise<void>
+  connectDevice: (mode?: ConnectionMode) => Promise<void>
   devices: DeviceDefinition[]
   devicePhase: DeviceConnectionPhase
   isConnected: boolean
@@ -28,9 +28,9 @@ function activeDeviceFor(settings: AppSettings | null, devices: DeviceDefinition
   return devices.find((device) => device.id === settings?.activeDeviceId) ?? firstDevice(devices)
 }
 
-function connectionTimeoutStatus(host: string): Promise<ConnectionStatus> {
+function connectionTimeoutStatus(host: string, mode: ConnectionMode): Promise<ConnectionStatus> {
   return new Promise((resolve) => {
-    setTimeout(() => resolve({ host, httpOk: false, controlOk: false, message: '连接超时' }), 4000)
+    setTimeout(() => resolve({ host, httpOk: false, controlOk: false, mode, message: '连接超时' }), 4000)
   })
 }
 
@@ -84,7 +84,7 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
   useEffect(() => {
     return window.luna.onConnectionLost(() => {
       const host = settings?.cameraHost || activeDevice?.defaultHost || ''
-      setConnection({ host, httpOk: false, controlOk: false, message: '设备连接已断开' })
+      setConnection({ host, httpOk: false, controlOk: false, mode: settings?.connectionMode ?? 'wifi', message: '设备连接已断开' })
       setDevicePhase('error')
       void window.luna.disconnect()
     })
@@ -95,22 +95,29 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
     if (!showDeviceConnect) setCameraLibraryMounted(true)
   }, [showDeviceConnect])
 
-  async function connectDevice(): Promise<void> {
+  async function connectDevice(modeOverride?: ConnectionMode): Promise<void> {
     try {
       const deviceId = settings?.activeDeviceId ?? activeDevice?.id
-      const host = settings?.cameraHost ?? activeDevice?.defaultHost
-      if (!deviceId || !host) {
-        setConnection({ host: host ?? '', httpOk: false, controlOk: false, message: '未配置设备连接地址' })
+      const mode = modeOverride ?? settings?.connectionMode ?? 'wifi'
+      const host = settings?.cameraHost || activeDevice?.defaultHost || ''
+      if (!deviceId) {
+        setConnection({ host, httpOk: false, controlOk: false, mode, message: '未配置设备' })
+        setDevicePhase('error')
+        return
+      }
+      if (mode === 'wifi' && !host) {
+        setConnection({ host, httpOk: false, controlOk: false, mode, message: '未配置设备连接地址' })
         setDevicePhase('error')
         return
       }
 
       setDevicePhase('checking')
       const status = await Promise.race([
-        window.luna.connectDevice({ deviceId, host }),
-        connectionTimeoutStatus(host),
+        window.luna.connectDevice({ deviceId, host, mode }),
+        connectionTimeoutStatus(mode === 'usb' ? '本地 USB' : host, mode),
       ])
       setConnection(status)
+      setSettings(await window.luna.getSettings())
       if ((status.httpOk && status.controlOk) || status.usbOk) {
         setDevicePhase('connected')
         setCameraLibraryMounted(false)
@@ -118,8 +125,9 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
         setDevicePhase('error')
       }
     } catch (error) {
+      const mode = settings?.connectionMode ?? 'wifi'
       const host = settings?.cameraHost || activeDevice?.defaultHost || ''
-      setConnection({ host, httpOk: false, controlOk: false, message: error instanceof Error ? error.message : String(error) })
+      setConnection({ host, httpOk: false, controlOk: false, mode, message: error instanceof Error ? error.message : String(error) })
       setDevicePhase('error')
     }
   }

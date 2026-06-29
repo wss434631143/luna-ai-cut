@@ -40,12 +40,14 @@ export interface ConnectionStatus {
   host: string
   httpOk: boolean
   controlOk: boolean
+  mode?: ConnectionMode
   usbOk?: boolean
   usbStorageCount?: number
   message: string
 }
 
 export type DeviceConnectionPhase = 'idle' | 'checking' | 'connected' | 'error'
+export type ConnectionMode = 'wifi' | 'usb'
 
 export interface DeviceStorageOption {
   id: string
@@ -91,6 +93,7 @@ export interface DeviceDefinition {
 export interface DeviceConnectOptions {
   deviceId?: string
   host?: string
+  mode?: ConnectionMode
   storageId?: string
 }
 
@@ -141,6 +144,7 @@ export interface AppSettings {
   exportDir?: string
   cacheDir: string
   cameraHost: string
+  connectionMode?: ConnectionMode
   activeDeviceId?: string
   /**
    * Per-device media library storage filter. "all" means all configured storages.

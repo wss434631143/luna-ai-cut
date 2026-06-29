@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Cable, CheckCircle2, HelpCircle, MonitorCog, PlugZap, RefreshCw } from 'lucide-react'
 
-import type { AppSettings, ConnectionStatus, DeviceConnectionPhase, DeviceDefinition, UsbDeviceCandidate } from '../shared/types'
-import { Alert, Button } from '../ui'
+import type { AppSettings, ConnectionMode, ConnectionStatus, DeviceConnectionPhase, DeviceDefinition, UsbDeviceCandidate } from '../shared/types'
+import { Alert, Button, SegmentedControl } from '../ui'
 import { HelpDialog } from '../components/HelpDialog'
 import '../styles/wifi.css'
 import lunaIcon from '/luna-icon.png'
@@ -12,7 +12,7 @@ interface DeviceConnectPageProps {
   connection: ConnectionStatus | null
   phase: DeviceConnectionPhase
   settings: AppSettings | null
-  onConnect: () => Promise<void>
+  onConnect: (mode?: ConnectionMode) => Promise<void>
 }
 
 export function DeviceConnectPage({
@@ -26,13 +26,20 @@ export function DeviceConnectPage({
   const [usbScanning, setUsbScanning] = useState(false)
   const [usbDevices, setUsbDevices] = useState<UsbDeviceCandidate[]>([])
   const [usbMessage, setUsbMessage] = useState('正在检测数据线连接...')
+  const [selectedMode, setSelectedMode] = useState<ConnectionMode>(settings?.connectionMode ?? 'wifi')
+  const connectionMode = selectedMode
   const isChecking = phase === 'checking'
   const isError = phase === 'error'
   const deviceName = activeDevice?.name ?? '设备'
+  const displayHost = settings?.cameraHost || activeDevice?.defaultHost || '未配置'
 
   useEffect(() => {
     void scanUsb()
   }, [])
+
+  useEffect(() => {
+    setSelectedMode(settings?.connectionMode ?? 'wifi')
+  }, [settings?.connectionMode])
 
   async function scanUsb(): Promise<void> {
     setUsbScanning(true)
@@ -42,7 +49,8 @@ export function DeviceConnectPage({
       setUsbMessage(devices.length > 0 ? '已识别到数据线存储或设备' : '暂未识别到数据线存储')
     } catch (error) {
       setUsbDevices([])
-      setUsbMessage(error instanceof Error ? error.message : String(error))
+      console.warn(error)
+      setUsbMessage('暂未识别到数据线存储')
     } finally {
       setUsbScanning(false)
     }
@@ -51,7 +59,7 @@ export function DeviceConnectPage({
   async function handleConnect(): Promise<void> {
     setConnecting(true)
     try {
-      await onConnect()
+      await onConnect(connectionMode)
     } finally {
       setConnecting(false)
     }
@@ -71,7 +79,7 @@ export function DeviceConnectPage({
         ) : (
           <p className="device-connect-desc">
             {isChecking
-              ? '正在唤醒设备、检测 Wi-Fi 服务并建立控制会话'
+              ? connectionMode === 'usb' ? '正在检测本地 USB 存储' : '正在唤醒设备、检测 Wi-Fi 服务并建立控制会话'
               : connection?.message ?? ''}
           </p>
         )}
@@ -79,7 +87,7 @@ export function DeviceConnectPage({
         <div className="device-connect-meta">
           <span>
             <PlugZap size={14} />
-            {settings?.cameraHost ?? activeDevice?.defaultHost ?? '未配置'}
+            {connectionMode === 'usb' ? '本地 USB' : displayHost}
           </span>
           {connection?.httpOk && connection.controlOk && (
             <span>
@@ -95,6 +103,23 @@ export function DeviceConnectPage({
           )}
         </div>
 
+        <div className="device-connect-mode">
+          <SegmentedControl<ConnectionMode>
+            ariaLabel="选择连接方式"
+            options={[
+              { value: 'wifi', label: 'Wi-Fi' },
+              { value: 'usb', label: '本地 USB' },
+            ]}
+            value={connectionMode}
+            onChange={(value) => {
+              setSelectedMode(value)
+              void window.luna.saveSettings({ connectionMode: value }).then(() => {
+                if (value === 'usb') void scanUsb()
+              })
+            }}
+          />
+        </div>
+
         <div className="device-connect-actions">
           <Button
             variant="primary"
@@ -102,11 +127,13 @@ export function DeviceConnectPage({
             disabled={connecting || isChecking}
             icon={connecting || isChecking ? <RefreshCw className="spin" size={16} /> : <RefreshCw size={16} />}
           >
-            {isError ? '重新连接' : '开始连接'}
+            {isError ? '重新连接' : connectionMode === 'usb' ? '连接本地 USB' : '连接 Wi-Fi'}
           </Button>
-          <Button variant="secondary" onClick={() => window.luna.openWifiSettings()} icon={<MonitorCog size={16} />}>
-            打开 Wi-Fi 设置
-          </Button>
+          {connectionMode === 'wifi' && (
+            <Button variant="secondary" onClick={() => window.luna.openWifiSettings()} icon={<MonitorCog size={16} />}>
+              打开 Wi-Fi 设置
+            </Button>
+          )}
         </div>
 
         <div className="device-usb-panel">
@@ -148,7 +175,9 @@ export function DeviceConnectPage({
           </p>
         </div>
         <p className="device-connect-tip">
-          Wi-Fi 连接仍可继续使用；数据线模式会直接读取 Windows 里出现的相机存储
+          {connectionMode === 'usb'
+            ? '本地 USB 模式会直接读取 Windows 里出现的相机存储'
+            : 'Wi-Fi 模式使用相机地址连接设备服务'}
         </p>
         <div className="device-connect-help">
           <HelpDialog>

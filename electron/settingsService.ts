@@ -34,6 +34,7 @@ function defaultSettings(): AppSettings {
     exportDir: defaultExportDir(),
     cacheDir: cacheDir(),
     cameraHost: DEFAULT_DEVICE.defaultHost,
+    connectionMode: 'wifi',
     activeDeviceId: DEFAULT_DEVICE.id,
     deviceStorage: { [DEFAULT_DEVICE.id]: 'all' },
     developerMode: false,

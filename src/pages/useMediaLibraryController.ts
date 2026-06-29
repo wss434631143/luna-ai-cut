@@ -248,7 +248,9 @@ export function useMediaLibraryController({
     const t0 = performance.now()
     try {
       const host = settings.cameraHost
-      await window.luna.checkConnection(host)
+      if ((settings.connectionMode ?? 'wifi') === 'wifi') {
+        await window.luna.checkConnection(host)
+      }
       // listFiles 只做轻量本地路径/已有缩略图标记，缓存由渲染层按需发起
       const lunaFiles = await window.luna.listFiles(host, storageFilter)
       const t1 = performance.now()

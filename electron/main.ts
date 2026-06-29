@@ -247,8 +247,14 @@ function registerIpc(): void {
   })
   ipcMain.handle('usb:scan', async () => {
     const [storageDevices, usbDevices] = await Promise.all([
-      scanUsbStorageDevices(),
-      scanUsbDevices(),
+      scanUsbStorageDevices().catch((error) => {
+        console.warn('[usb] storage scan failed', error)
+        return []
+      }),
+      scanUsbDevices().catch((error) => {
+        console.warn('[usb] device scan failed', error)
+        return []
+      }),
     ])
     const seenIds = new Set(storageDevices.map((device) => device.id))
     return [
@@ -265,32 +271,48 @@ function registerIpc(): void {
     const settings = await getSettings()
     const deviceId = options?.deviceId ?? settings.activeDeviceId ?? DEFAULT_DEVICE.id
     if (deviceId !== DEFAULT_DEVICE.id) throw new Error(`未支持的设备协议：${deviceId}`)
-    const status = await lunaProtocol().connect({ ...options, deviceId })
-    if (status.httpOk && status.controlOk) return status
+    const mode = options?.mode ?? settings.connectionMode ?? 'wifi'
+    if (mode === 'usb') {
+      const usbVolumes = await scanUsbStorageVolumes()
+      if (usbVolumes.length > 0) {
+        await saveSettings({
+          activeDeviceId: DEFAULT_DEVICE.id,
+          connectionMode: 'usb',
+          deviceStorage: {
+            ...(settings.deviceStorage ?? {}),
+            [DEFAULT_DEVICE.id]: settings.deviceStorage?.[DEFAULT_DEVICE.id] ?? 'all',
+          },
+        })
+        return {
+          deviceId: DEFAULT_DEVICE.id,
+          deviceName: DEFAULT_DEVICE.name,
+          host: '本地 USB',
+          httpOk: false,
+          controlOk: true,
+          mode: 'usb',
+          usbOk: true,
+          usbStorageCount: usbVolumes.length,
+          message: `已通过数据线识别 ${usbVolumes.length} 个存储位置`,
+        }
+      }
 
-    const usbVolumes = await scanUsbStorageVolumes()
-    if (usbVolumes.length > 0) {
-      await saveSettings({
-        activeDeviceId: DEFAULT_DEVICE.id,
-        cameraHost: options?.host || settings.cameraHost || DEFAULT_DEVICE.defaultHost,
-        deviceStorage: {
-          ...(settings.deviceStorage ?? {}),
-          [DEFAULT_DEVICE.id]: settings.deviceStorage?.[DEFAULT_DEVICE.id] ?? 'all',
-        },
-      })
+      await saveSettings({ activeDeviceId: DEFAULT_DEVICE.id, connectionMode: 'usb' })
       return {
         deviceId: DEFAULT_DEVICE.id,
         deviceName: DEFAULT_DEVICE.name,
-        host: options?.host || settings.cameraHost || DEFAULT_DEVICE.defaultHost,
+        host: '本地 USB',
         httpOk: false,
-        controlOk: true,
-        usbOk: true,
-        usbStorageCount: usbVolumes.length,
-        message: `已通过数据线识别 ${usbVolumes.length} 个存储位置`,
+        controlOk: false,
+        mode: 'usb',
+        usbOk: false,
+        usbStorageCount: 0,
+        message: '未检测到本地 USB 存储，请确认相机已连接并选择文件传输模式',
       }
     }
 
-    return status
+    const status = await lunaProtocol().connect({ ...options, deviceId })
+    await saveSettings({ connectionMode: 'wifi' })
+    return { ...status, mode: 'wifi' }
   })
 
   ipcMain.handle('luna:checkConnection', async (_event, host?: string) => {
@@ -304,11 +326,9 @@ function registerIpc(): void {
     const normalizedHost = host || settings.cameraHost
     const deviceId = settings.activeDeviceId ?? DEFAULT_DEVICE.id
     const nextStorageId = storageId ?? settings.deviceStorage?.[deviceId] ?? 'all'
-    const usbVolumes = await scanUsbStorageVolumes()
-    if (usbVolumes.length > 0) {
+    if ((settings.connectionMode ?? 'wifi') === 'usb') {
       const files = await listUsbStorageFiles(nextStorageId)
       await saveSettings({
-        cameraHost: normalizedHost,
         deviceStorage: {
           ...(settings.deviceStorage ?? {}),
           [deviceId]: nextStorageId,

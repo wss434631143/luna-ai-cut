@@ -39,7 +39,7 @@ export class LunaUltraProtocol implements DeviceProtocol {
     const settings = await getSettings()
     const normalizedHost = host || settings.cameraHost || this.definition.defaultHost
     const client = this.clientFor(normalizedHost, this.controlPortForHost(normalizedHost))
-    return withDeviceInfo(await client.checkStatus(), this.definition)
+    return withDeviceInfo({ ...(await client.checkStatus()), mode: 'wifi' }, this.definition)
   }
 
   async connect(options?: DeviceConnectOptions): Promise<ConnectionStatus> {
@@ -48,7 +48,7 @@ export class LunaUltraProtocol implements DeviceProtocol {
     const host = options?.host || settings.cameraHost || this.definition.defaultHost
     const client = this.clientFor(host, this.controlPortForHost(host))
     const status = await client.checkStatus()
-    if (!status.httpOk || !status.controlOk) return withDeviceInfo(status, this.definition)
+    if (!status.httpOk || !status.controlOk) return withDeviceInfo({ ...status, mode: 'wifi' }, this.definition)
 
     await client.connect()
     client.onKeepAliveFailed = this.onConnectionLost ?? null
@@ -57,7 +57,7 @@ export class LunaUltraProtocol implements DeviceProtocol {
       activeDeviceId: this.definition.id,
       cameraHost: client.host,
     })
-    return withDeviceInfo({ ...status, message: `已连接 ${this.definition.name}` }, this.definition)
+    return withDeviceInfo({ ...status, mode: 'wifi', message: `已连接 ${this.definition.name}` }, this.definition)
   }
 
   async listFiles(options?: DeviceConnectOptions): Promise<LunaFile[]> {

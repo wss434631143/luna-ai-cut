@@ -88,7 +88,7 @@ function normalizeWindowsDiskPayload(stdout: string): WindowsLogicalDisk[] {
 
 async function windowsLogicalDisks(): Promise<WindowsLogicalDisk[]> {
   const script = [
-    '$ErrorActionPreference = "Stop"',
+    '$ErrorActionPreference = "Stop";',
     'Get-CimInstance Win32_LogicalDisk |',
     'Where-Object { $_.DriveType -eq 2 -or $_.DriveType -eq 3 } |',
     'Select-Object DeviceID,VolumeName,FileSystem,DriveType,FreeSpace,Size |',
@@ -113,7 +113,15 @@ export async function scanUsbStorageVolumes(): Promise<UsbStorageVolume[]> {
   if (process.platform !== 'win32') return []
 
   const volumes: UsbStorageVolume[] = []
-  for (const disk of await windowsLogicalDisks()) {
+  let disks: WindowsLogicalDisk[]
+  try {
+    disks = await windowsLogicalDisks()
+  } catch (error) {
+    console.warn('[usb-storage] failed to scan Windows logical disks', error)
+    return []
+  }
+
+  for (const disk of disks) {
     const deviceId = typeof disk.DeviceID === 'string' ? disk.DeviceID : ''
     if (!deviceId) continue
 
