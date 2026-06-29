@@ -19,6 +19,14 @@ interface SystemProfilerUsbPayload {
   SPUSBDataType?: SystemProfilerUsbNode[]
 }
 
+interface WindowsPnpDevice {
+  FriendlyName?: string
+  InstanceId?: string
+  Manufacturer?: string
+  Class?: string
+  Status?: string
+}
+
 const CAMERA_KEYWORDS = [
   'insta360',
   'arashi',
@@ -100,15 +108,97 @@ function uniqueDevices(devices: UsbDeviceCandidate[]): UsbDeviceCandidate[] {
   })
 }
 
-export async function scanUsbDevices(): Promise<UsbDeviceCandidate[]> {
-  if (process.platform !== 'darwin') {
-    return []
-  }
-
+async function scanMacUsbDevices(): Promise<UsbDeviceCandidate[]> {
   const { stdout } = await execFileAsync('/usr/sbin/system_profiler', ['SPUSBDataType', '-json'], {
     maxBuffer: 8 * 1024 * 1024,
     timeout: 15_000,
   })
   const payload = JSON.parse(stdout) as SystemProfilerUsbPayload
   return uniqueDevices(flattenUsbNodes(payload.SPUSBDataType))
+}
+
+function parseWindowsVidPid(instanceId: string): { vendorId?: string; productId?: string; serialNumber?: string } {
+  const vid = instanceId.match(/VID_([0-9A-F]{4})/i)?.[1]
+  const pid = instanceId.match(/PID_([0-9A-F]{4})/i)?.[1]
+  const parts = instanceId.split('\\')
+  const serialNumber = parts.length > 2 ? parts[parts.length - 1] : undefined
+  return {
+    vendorId: vid ? `0x${vid.toLowerCase()}` : undefined,
+    productId: pid ? `0x${pid.toLowerCase()}` : undefined,
+    serialNumber,
+  }
+}
+
+function normalizeWindowsPnpPayload(stdout: string): WindowsPnpDevice[] {
+  const text = stdout.trim()
+  if (!text) return []
+  const parsed = JSON.parse(text) as WindowsPnpDevice | WindowsPnpDevice[]
+  return Array.isArray(parsed) ? parsed : [parsed]
+}
+
+function windowsPnpDeviceToCandidate(device: WindowsPnpDevice): UsbDeviceCandidate | null {
+  const name = normalizeText(device.FriendlyName)
+  const instanceId = normalizeText(device.InstanceId)
+  const manufacturer = normalizeText(device.Manufacturer)
+  const deviceClass = normalizeText(device.Class)
+  const status = normalizeText(device.Status)
+  if (!name || !instanceId) return null
+
+  const searchText = [name, manufacturer, deviceClass, instanceId, status].join(' ').toLowerCase()
+  const isLikelyUsbTransport = instanceId.toUpperCase().startsWith('USB') || searchText.includes('mtp') || searchText.includes('ptp')
+  if (!isLikelyUsbTransport) return null
+  if (!matchesCameraDevice(name, manufacturer, deviceClass, searchText)) return null
+
+  const ids = parseWindowsVidPid(instanceId)
+  return {
+    id: instanceId,
+    name,
+    manufacturer,
+    serialNumber: ids.serialNumber,
+    vendorId: ids.vendorId,
+    productId: ids.productId,
+    busName: deviceClass,
+    transport: 'usb',
+    matched: true,
+    source: 'powershell',
+  }
+}
+
+async function scanWindowsUsbDevices(): Promise<UsbDeviceCandidate[]> {
+  const script = [
+    '$ErrorActionPreference = "Stop"',
+    '$classes = @("Camera", "Image", "WPD", "USB")',
+    '$devices = Get-PnpDevice -PresentOnly | Where-Object {',
+    '  $name = [string]$_.FriendlyName',
+    '  $id = [string]$_.InstanceId',
+    '  $class = [string]$_.Class',
+    '  $text = "$name $id $class"',
+    '  $id -like "USB*" -or $classes -contains $class -or $text -match "Insta360|Luna|PTP|MTP|Still Image|Digital Still Camera|Camera"',
+    '} | Select-Object FriendlyName,InstanceId,Manufacturer,Class,Status',
+    '$devices | ConvertTo-Json -Compress',
+  ].join('; ')
+
+  const { stdout } = await execFileAsync('powershell.exe', [
+    '-NoProfile',
+    '-ExecutionPolicy',
+    'Bypass',
+    '-Command',
+    script,
+  ], {
+    maxBuffer: 8 * 1024 * 1024,
+    timeout: 15_000,
+    windowsHide: true,
+  })
+
+  return uniqueDevices(
+    normalizeWindowsPnpPayload(stdout)
+      .map(windowsPnpDeviceToCandidate)
+      .filter((device): device is UsbDeviceCandidate => Boolean(device)),
+  )
+}
+
+export async function scanUsbDevices(): Promise<UsbDeviceCandidate[]> {
+  if (process.platform === 'darwin') return scanMacUsbDevices()
+  if (process.platform === 'win32') return scanWindowsUsbDevices()
+  return []
 }

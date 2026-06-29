@@ -258,7 +258,7 @@ export interface UsbDeviceCandidate {
   busName?: string
   transport: 'usb'
   matched: boolean
-  source: 'system_profiler'
+  source: 'system_profiler' | 'powershell'
 }
 
 export type WifiDebugPlatform = 'darwin' | 'win32' | 'linux' | string
