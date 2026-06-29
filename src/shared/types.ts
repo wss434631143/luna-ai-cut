@@ -40,6 +40,8 @@ export interface ConnectionStatus {
   host: string
   httpOk: boolean
   controlOk: boolean
+  usbOk?: boolean
+  usbStorageCount?: number
   message: string
 }
 
@@ -256,6 +258,10 @@ export interface UsbDeviceCandidate {
   productId?: string
   productVersion?: string
   busName?: string
+  mountPath?: string
+  storageId?: string
+  freeBytes?: number | null
+  totalBytes?: number | null
   transport: 'usb'
   matched: boolean
   source: 'system_profiler' | 'powershell'

@@ -58,7 +58,7 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
   const [cameraLibraryMounted, setCameraLibraryMounted] = useState(false)
 
   const activeDevice = useMemo(() => activeDeviceFor(settings, devices), [devices, settings])
-  const isConnected = devicePhase === 'connected' && Boolean(connection?.httpOk && connection.controlOk)
+  const isConnected = devicePhase === 'connected' && Boolean((connection?.httpOk && connection.controlOk) || connection?.usbOk)
   const showDeviceConnect = !isConnected
 
   useEffect(() => {
@@ -111,7 +111,7 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
         connectionTimeoutStatus(host),
       ])
       setConnection(status)
-      if (status.httpOk && status.controlOk) {
+      if ((status.httpOk && status.controlOk) || status.usbOk) {
         setDevicePhase('connected')
         setCameraLibraryMounted(false)
       } else {

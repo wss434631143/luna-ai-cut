@@ -39,7 +39,7 @@ export function DeviceConnectPage({
     try {
       const devices = await window.luna.scanUsbDevices()
       setUsbDevices(devices)
-      setUsbMessage(devices.length > 0 ? '已识别到数据线设备' : '暂未识别到数据线设备')
+      setUsbMessage(devices.length > 0 ? '已识别到数据线存储或设备' : '暂未识别到数据线存储')
     } catch (error) {
       setUsbDevices([])
       setUsbMessage(error instanceof Error ? error.message : String(error))
@@ -87,6 +87,12 @@ export function DeviceConnectPage({
               已检测到服务
             </span>
           )}
+          {connection?.usbOk && (
+            <span>
+              <CheckCircle2 size={14} />
+              已检测到 {connection.usbStorageCount ?? 0} 个数据线存储
+            </span>
+          )}
         </div>
 
         <div className="device-connect-actions">
@@ -119,7 +125,13 @@ export function DeviceConnectPage({
               {usbDevices.map((device) => (
                 <div className="device-usb-item" key={device.id}>
                   <strong>{device.name}</strong>
-                  <span>{device.manufacturer || '未知厂商'}{device.busName ? ` · ${device.busName}` : ''}</span>
+                  <span>
+                    {[
+                      device.manufacturer || '未知厂商',
+                      device.mountPath,
+                      device.busName,
+                    ].filter(Boolean).join(' · ')}
+                  </span>
                   {(device.vendorId || device.productId || device.serialNumber) && (
                     <em>
                       {[device.vendorId, device.productId, device.serialNumber].filter(Boolean).join(' · ')}
@@ -132,11 +144,11 @@ export function DeviceConnectPage({
             <p className="device-usb-empty">{usbMessage}</p>
           )}
           <p className="device-usb-note">
-            先识别 USB 设备；媒体读取还需要后续接入相机的 PTP/MTP 或系统导入协议。
+            Windows 文件传输模式会动态识别相机挂载出的内部存储和 SD 卡，不依赖固定盘符。
           </p>
         </div>
         <p className="device-connect-tip">
-          Wi-Fi 连接仍可继续使用；数据线识别用于验证 macOS 能看到相机
+          Wi-Fi 连接仍可继续使用；数据线模式会直接读取 Windows 里出现的相机存储
         </p>
         <div className="device-connect-help">
           <HelpDialog>

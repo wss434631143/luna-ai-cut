@@ -33,13 +33,14 @@ import {
 import { listSampleFiles } from './localMedia'
 import { DEFAULT_HOST, LunaClient } from './lunaProtocol'
 import { LunaUltraProtocol } from './deviceProtocols'
-import { DEFAULT_DEVICE, deviceDefinitionFor, deviceDefinitions } from './deviceDefaults'
+import { DEFAULT_DEVICE, deviceDefinitionFor, deviceDefinitionsWithUsbStorage } from './deviceDefaults'
 import { getMockStatus, mockTcpPortForHost, startMockServer, stopMockServer } from './mockServerService'
 import { createPreviewTaskQueue } from './previewTaskQueue'
 import { appIconPath, createMainWindow } from './windowService'
 import { chatCompletion } from './aiService'
 import { openWifiSettings } from './wifiService'
 import { scanUsbDevices } from './usbDeviceService'
+import { listUsbStorageFiles, scanUsbStorageDevices, scanUsbStorageVolumes } from './usbStorageService'
 import {
   checkWifiPort,
   connectWifiNetwork,
@@ -212,7 +213,7 @@ app.on('activate', () => {
 function registerIpc(): void {
   ipcMain.handle('settings:get', () => getSettings())
   ipcMain.handle('settings:save', (_event, settings: Partial<AppSettings>) => saveSettings(settings))
-  ipcMain.handle('devices:list', () => deviceDefinitions())
+  ipcMain.handle('devices:list', () => deviceDefinitionsWithUsbStorage())
   ipcMain.handle('settings:chooseDownloadDir', () => chooseDownloadDir())
   ipcMain.handle('settings:chooseExportDir', () => chooseExportDir())
   ipcMain.handle('settings:chooseMockMediaDir', () => chooseMockMediaDir())
@@ -244,7 +245,17 @@ function registerIpc(): void {
   ipcMain.handle('bluetooth:cancelScan', () => {
     cancelBluetoothScan()
   })
-  ipcMain.handle('usb:scan', () => scanUsbDevices())
+  ipcMain.handle('usb:scan', async () => {
+    const [storageDevices, usbDevices] = await Promise.all([
+      scanUsbStorageDevices(),
+      scanUsbDevices(),
+    ])
+    const seenIds = new Set(storageDevices.map((device) => device.id))
+    return [
+      ...storageDevices,
+      ...usbDevices.filter((device) => !seenIds.has(device.id)),
+    ]
+  })
   ipcMain.handle('devtools:open', () => {
     const bw = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0]
     bw?.webContents.openDevTools({ mode: 'detach' })
@@ -254,7 +265,32 @@ function registerIpc(): void {
     const settings = await getSettings()
     const deviceId = options?.deviceId ?? settings.activeDeviceId ?? DEFAULT_DEVICE.id
     if (deviceId !== DEFAULT_DEVICE.id) throw new Error(`未支持的设备协议：${deviceId}`)
-    return lunaProtocol().connect({ ...options, deviceId })
+    const status = await lunaProtocol().connect({ ...options, deviceId })
+    if (status.httpOk && status.controlOk) return status
+
+    const usbVolumes = await scanUsbStorageVolumes()
+    if (usbVolumes.length > 0) {
+      await saveSettings({
+        activeDeviceId: DEFAULT_DEVICE.id,
+        cameraHost: options?.host || settings.cameraHost || DEFAULT_DEVICE.defaultHost,
+        deviceStorage: {
+          ...(settings.deviceStorage ?? {}),
+          [DEFAULT_DEVICE.id]: settings.deviceStorage?.[DEFAULT_DEVICE.id] ?? 'all',
+        },
+      })
+      return {
+        deviceId: DEFAULT_DEVICE.id,
+        deviceName: DEFAULT_DEVICE.name,
+        host: options?.host || settings.cameraHost || DEFAULT_DEVICE.defaultHost,
+        httpOk: false,
+        controlOk: true,
+        usbOk: true,
+        usbStorageCount: usbVolumes.length,
+        message: `已通过数据线识别 ${usbVolumes.length} 个存储位置`,
+      }
+    }
+
+    return status
   })
 
   ipcMain.handle('luna:checkConnection', async (_event, host?: string) => {
@@ -268,6 +304,19 @@ function registerIpc(): void {
     const normalizedHost = host || settings.cameraHost
     const deviceId = settings.activeDeviceId ?? DEFAULT_DEVICE.id
     const nextStorageId = storageId ?? settings.deviceStorage?.[deviceId] ?? 'all'
+    const usbVolumes = await scanUsbStorageVolumes()
+    if (usbVolumes.length > 0) {
+      const files = await listUsbStorageFiles(nextStorageId)
+      await saveSettings({
+        cameraHost: normalizedHost,
+        deviceStorage: {
+          ...(settings.deviceStorage ?? {}),
+          [deviceId]: nextStorageId,
+        },
+      })
+      return files
+    }
+
     const files = await lunaProtocol().listFiles({ deviceId, host: normalizedHost, storageId: nextStorageId })
     await saveSettings({
       cameraHost: normalizedHost,
